@@ -64,9 +64,52 @@
         </div>
       </a-layout-header>
 
+      <!-- 标签页导航 -->
+      <div class="tabs-wrapper">
+        <a-tabs
+          v-model:activeKey="activeKey"
+          type="editable-card"
+          hide-add
+          size="small"
+          @edit="onTabEdit"
+          @change="onTabChange"
+        >
+          <a-tab-pane
+            v-for="tab in tabs"
+            :key="tab.path"
+            :closable="tab.closable"
+          >
+            <template #tab>
+              <a-dropdown :trigger="['contextmenu']">
+                <span>{{ tab.title }}</span>
+                <template #overlay>
+                  <a-menu @click="({ key }: { key: any }) => handleContextMenu(tab.path, key as string)">
+                    <a-menu-item key="current" :disabled="!tab.closable">关闭当前</a-menu-item>
+                    <a-menu-item 
+                      key="left" 
+                      :disabled="isFirstClosable(tab.path)"
+                    >关闭左侧</a-menu-item>
+                    <a-menu-item 
+                      key="right" 
+                      :disabled="isLastTab(tab.path)"
+                    >关闭右侧</a-menu-item>
+                    <a-menu-item key="others">关闭其他</a-menu-item>
+                    <a-menu-item key="all">关闭全部</a-menu-item>
+                  </a-menu>
+                </template>
+              </a-dropdown>
+            </template>
+          </a-tab-pane>
+        </a-tabs>
+      </div>
+
       <!-- 主内容区 -->
       <a-layout-content class="layout-content">
-        <router-view />
+        <router-view v-slot="{ Component }">
+          <keep-alive>
+            <component :is="Component" :key="route.fullPath" />
+          </keep-alive>
+        </router-view>
       </a-layout-content>
     </a-layout>
   </a-layout>
@@ -83,6 +126,7 @@ import {
 } from '@ant-design/icons-vue'
 import { message } from 'ant-design-vue'
 import SideMenu from './SideMenu.vue'
+import { useTabs } from '../store/useTabs'
 import { getInfo, logout, switchDept, type LoginResult, type DeptOption } from '../api/auth'
 import request from '../utils/request'
 
@@ -135,10 +179,54 @@ const loadUserInfo = async () => {
 const loadMenus = async () => {
   try {
     const res = await request.get('/menu/getRouters')
-    menus.value = res || []
+    menus.value = (res as any) || []
   } catch (e) {
     console.error('加载菜单失败:', e)
   }
+}
+
+// 标签页逻辑
+const { 
+  tabs, activeKey, addTab, removeTab, 
+  closeOthers, closeLeft, closeRight, closeAll, resetTabs 
+} = useTabs()
+
+// 监听路由变化添加标签
+watch(() => route.fullPath, () => {
+  addTab(route)
+}, { immediate: true })
+
+const onTabChange = (key: string) => {
+  router.push(key)
+}
+
+const onTabEdit = (targetKey: any, action: string) => {
+  if (action === 'remove') {
+    removeTab(targetKey as string)
+  }
+}
+
+const handleContextMenu = (path: string, key: string) => {
+  switch (key) {
+    case 'current': removeTab(path); break
+    case 'others': closeOthers(path); break
+    case 'left': closeLeft(path); break
+    case 'right': closeRight(path); break
+    case 'all': closeAll(); break
+  }
+}
+
+// 判断是否为第一个可关闭标签（或首页）
+const isFirstClosable = (path: string) => {
+  const index = tabs.value.findIndex(t => t.path === path)
+  // 如果是首页，或者左侧没有除首页外的标签
+  return index <= 1
+}
+
+// 判断是否为最后一个标签
+const isLastTab = (path: string) => {
+  const index = tabs.value.findIndex(t => t.path === path)
+  return index === tabs.value.length - 1
 }
 
 // 切换部门
@@ -166,6 +254,7 @@ const handleLogout = async () => {
   } catch (e) {}
   localStorage.removeItem('token')
   localStorage.removeItem('deptList')
+  resetTabs() // 清理标签页
   router.push('/login')
 }
 </script>
@@ -224,10 +313,30 @@ const handleLogout = async () => {
 }
 
 .layout-content {
-  margin: 16px;
+  margin: 0 16px 16px;
   padding: 24px;
   background: white;
   min-height: 280px;
   border-radius: 8px;
+}
+
+.tabs-wrapper {
+  background: #f0f2f5;
+  padding: 6px 16px 0;
+}
+
+:deep(.ant-tabs-nav) {
+  margin: 0 !important;
+}
+
+:deep(.ant-tabs-card > .ant-tabs-nav .ant-tabs-tab) {
+  border: none !important;
+  background: white !important;
+  transition: all 0.3s;
+}
+
+:deep(.ant-tabs-card > .ant-tabs-nav .ant-tabs-tab-active) {
+  background: #e6f7ff !important;
+  color: #1890ff !important;
 }
 </style>

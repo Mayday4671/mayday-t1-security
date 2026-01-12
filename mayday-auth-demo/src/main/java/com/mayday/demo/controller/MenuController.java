@@ -158,7 +158,8 @@ public class MenuController {
                     vo.setIcon(m.getIcon());
                     vo.setOrderNum(m.getOrderNum());
                     vo.setStatus(m.getStatus());
-                    vo.setChildren(buildMenuTree(menus, m.getId()));
+                    List<MenuTreeVo> children = buildMenuTree(menus, m.getId());
+                    vo.setChildren(children.isEmpty() ? null : children);
                     return vo;
                 })
                 .collect(Collectors.toList());
@@ -176,6 +177,18 @@ public class MenuController {
     public R<List<RouterVo>> getRouters() {
         LoginUser loginUser = SecurityUtils.getLoginUser();
         
+        // 1. 如果是超级管理员，直接查询所有菜单 (不根据角色过滤)
+        // 注意：此处 SecurityUtils.isAdmin() 内部判断的是 UserID == 1L
+        if (SecurityUtils.isAdmin()) {
+            QueryWrapper menuWrapper = QueryWrapper.create()
+                    .from(SYS_MENU)
+                    .where(SYS_MENU.MENU_TYPE.ne("F"))
+                    .and(SYS_MENU.STATUS.eq("0"))
+                    .orderBy(SYS_MENU.PARENT_ID.asc(), SYS_MENU.ORDER_NUM.asc());
+            List<SysMenu> menus = menuMapper.selectListByQuery(menuWrapper);
+            return R.ok(buildRouterTree(menus, 0L));
+        }
+
         List<Long> roleIds = loginUser.getRoles().stream()
                 .map(role -> role.getId())
                 .collect(Collectors.toList());
@@ -184,7 +197,7 @@ public class MenuController {
             return R.ok(new ArrayList<>());
         }
         
-        // 1. 查询角色直接关联的菜单ID
+        // 2. 查询角色直接关联的菜单ID
         QueryWrapper roleMenuWrapper = QueryWrapper.create()
                 .select(SYS_ROLE_MENU.MENU_ID)
                 .from(SYS_ROLE_MENU)
@@ -198,10 +211,10 @@ public class MenuController {
             return R.ok(new ArrayList<>());
         }
         
-        // 2. 查询这些菜单的详细信息
+        // 3. 查询这些菜单的详细信息
         List<SysMenu> directMenus = menuMapper.selectListByIds(new ArrayList<>(directMenuIds));
         
-        // 3. 递归补充所有父级菜单ID
+        // 4. 递归补充所有父级菜单ID
         Set<Long> allMenuIds = new java.util.HashSet<>(directMenuIds);
         for (SysMenu menu : directMenus) {
             Long parentId = menu.getParentId();
@@ -216,7 +229,7 @@ public class MenuController {
             }
         }
         
-        // 4. 查询完整的菜单列表 (排除按钮)
+        // 5. 查询完整的菜单列表 (排除按钮)
         QueryWrapper menuWrapper = QueryWrapper.create()
                 .from(SYS_MENU)
                 .where(SYS_MENU.ID.in(allMenuIds))
@@ -249,6 +262,8 @@ public class MenuController {
                 if ("M".equals(menu.getMenuType())) {
                     router.setRedirect(menu.getPath() + "/" + children.get(0).getPath());
                 }
+            } else {
+                router.setChildren(null);
             }
             routers.add(router);
         }

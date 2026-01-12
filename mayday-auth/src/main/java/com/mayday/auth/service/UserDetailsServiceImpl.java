@@ -83,7 +83,14 @@ public class UserDetailsServiceImpl implements UserDetailsService {
         List<SysRole> roles = permissionService.getRolesByUserAndDept(user.getId(), defaultDeptId);
 
         // 4. 加载权限
-        Set<String> permissions = permissionService.getPermissionsByRoles(roles);
+        Set<String> permissions = permissionService.getPermissionsByRoles(roles, user.getId());
+
+        log.info("--- 登录权限审计 [START] ---");
+        log.info("用户账号: {}, 用户ID: {}", username, user.getId());
+        log.info("关联角色数: {}", roles.size());
+        roles.forEach(r -> log.info("  -> 角色: {} [Key: {}, ID: {}]", r.getRoleName(), r.getRoleKey(), r.getId()));
+        log.info("最终计算权限标识数: {}", permissions.size());
+        log.info("--- 登录权限审计 [END] ---");
 
         log.debug("用户 {} 登录成功，默认部门: {}, 角色数: {}, 权限数: {}", 
                 username, defaultDeptId, roles.size(), permissions.size());
@@ -146,7 +153,7 @@ public class UserDetailsServiceImpl implements UserDetailsService {
         }
 
         List<SysRole> roles = permissionService.getRolesByUserAndDept(userId, deptId);
-        Set<String> permissions = permissionService.getPermissionsByRoles(roles);
+        Set<String> permissions = permissionService.getPermissionsByRoles(roles, userId);
 
         // 获取用户关联的所有部门 ID
         List<Long> allDeptIds = getAllDeptIds(userId);

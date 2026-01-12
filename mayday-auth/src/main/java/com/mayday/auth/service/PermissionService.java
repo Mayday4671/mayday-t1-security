@@ -95,18 +95,37 @@ public class PermissionService {
      * 获取角色对应的权限标识集合
      *
      * @param roles 角色列表
-     * @return 权限标识集合 (如 "system:user:list", "system:role:add")
+     * @param userId 用户ID (用于判断超级管理员特权)
+     * @return 权限标识集合
      */
-    public Set<String> getPermissionsByRoles(List<SysRole> roles) {
+    public Set<String> getPermissionsByRoles(List<SysRole> roles, Long userId) {
         if (roles == null || roles.isEmpty()) {
+             log.debug("用户 [{}] 无任何角色，权限集为空", userId);
             return new HashSet<>();
+        }
+
+        // 1. 如果是超级管理员 (UserID=1)，直接赋予所有正常状态的权限标识
+        // 注意：这里我们严格只认 UserID，不认角色 ID，确保其他用户的角色配置可以灵活调整
+        if (userId != null && 1L == userId) {
+            log.info("检测到超级管理员(ID=1)登录，开启上帝模式，透传全量权限标识");
+            QueryWrapper wrapper = QueryWrapper.create()
+                    .select(SYS_MENU.PERMS)
+                    .from(SYS_MENU)
+                    .where(SYS_MENU.STATUS.eq("0"))
+                    .and(SYS_MENU.PERMS.isNotNull())
+                    .and(SYS_MENU.PERMS.ne(""));
+            return menuMapper.selectListByQuery(wrapper).stream()
+                    .map(com.mayday.auth.entity.SysMenu::getPerms)
+                    .collect(Collectors.toSet());
         }
 
         List<Long> roleIds = roles.stream()
                 .map(SysRole::getId)
                 .collect(Collectors.toList());
+        
+        log.debug("开始为用户 [{}] 加载权限，涉及角色ID集合: {}", userId, roleIds);
 
-        // 通过角色ID查询关联的菜单
+        // 通过角色ID查询关联的菜单权限标识
         QueryWrapper wrapper = QueryWrapper.create()
                 .select(SYS_MENU.PERMS)
                 .from(SYS_MENU)
@@ -117,11 +136,18 @@ public class PermissionService {
                 .and(SYS_MENU.PERMS.ne(""));
 
         List<com.mayday.auth.entity.SysMenu> menus = menuMapper.selectListByQuery(wrapper);
-
-        return menus.stream()
+        Set<String> permsSet = menus.stream()
                 .map(com.mayday.auth.entity.SysMenu::getPerms)
                 .filter(perms -> perms != null && !perms.isEmpty())
                 .collect(Collectors.toSet());
+        
+        log.info("权限加载完成。用户: {}, 角色数: {}, 最终提取权限数: {}", userId, roles.size(), permsSet.size());
+        return permsSet;
+    }
+
+    // 保留旧方法兼容性 (不推荐使用)
+    public Set<String> getPermissionsByRoles(List<SysRole> roles) {
+        return getPermissionsByRoles(roles, null);
     }
 
     /**
