@@ -159,6 +159,6 @@ public class PermissionService {
      */
     public Set<String> getPermissionsByUserAndDept(Long userId, Long deptId) {
         List<SysRole> roles = getRolesByUserAndDept(userId, deptId);
-        return getPermissionsByRoles(roles);
+        return getPermissionsByRoles(roles, userId);
     }
 }

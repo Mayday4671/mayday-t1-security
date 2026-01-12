@@ -177,4 +177,24 @@ public class UserQueryService {
         String dataScopeSql = (String) queryParam.getParams().get("dataScope");
         return dataScopeSql != null ? dataScopeSql : "无条件（管理员拥有全部权限）";
     }
+
+    public static void main(String[] args)
+    {
+        String userName = "lc";
+        String phone = "013101055310";
+        System.out.println(String.format("%s - %s", userName, phone));
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
 }
