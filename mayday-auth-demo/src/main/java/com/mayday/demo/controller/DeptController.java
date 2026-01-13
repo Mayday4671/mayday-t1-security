@@ -96,29 +96,99 @@ public class DeptController {
 
     /**
      * 新增部门
+     * <p>
+     * 权限校验：用户只能在自己有权限的部门下创建子部门
+     * </p>
      */
     @PostMapping
     @PreAuthorize("hasAuthority('system:dept:add')")
     public R<Void> add(@Valid @RequestBody DeptRequest request) {
+        LoginUser loginUser = SecurityUtils.getLoginUser();
+        
+        // 1. 获取用户的数据权限范围
+        String dataScope = "5"; // 默认仅本人
+        if (loginUser.getRoles() != null && !loginUser.getRoles().isEmpty()) {
+            dataScope = loginUser.getRoles().get(0).getDataScope();
+        }
+        
+        // 2. 只有全部数据权限(1)的用户才能创建顶级部门
+        Long parentId = request.getParentId();
+        if (parentId == null || parentId == 0) {
+            if (!"1".equals(dataScope)) {
+                log.warn("用户 {} 尝试创建顶级部门，但没有权限 (dataScope={})", 
+                        loginUser.getUsername(), dataScope);
+                return R.fail("您没有权限创建顶级部门，请选择上级部门");
+            }
+        } else {
+            // 3. 检查用户是否有权限在指定父部门下创建
+            List<Long> allowedDeptIds = loginUser.getAllDeptIds();
+            if (!"1".equals(dataScope)) {
+                // 非全部权限：检查父部门是否在用户权限范围内
+                boolean hasPermission = false;
+                
+                if ("2".equals(dataScope) || "4".equals(dataScope)) {
+                    // 本部门及以下：需要检查父部门是否在用户部门树下
+                    hasPermission = isInDeptTree(parentId, allowedDeptIds);
+                } else if ("3".equals(dataScope) || "5".equals(dataScope)) {
+                    // 仅本部门/本人：只能在自己部门下创建
+                    hasPermission = allowedDeptIds != null && allowedDeptIds.contains(parentId);
+                }
+                
+                if (!hasPermission) {
+                    log.warn("用户 {} 尝试在部门 {} 下创建子部门，但没有权限", 
+                            loginUser.getUsername(), parentId);
+                    return R.fail("您没有权限在该部门下创建子部门");
+                }
+            }
+        }
+        
         SysDept dept = new SysDept();
-        dept.setParentId(request.getParentId());
+        dept.setParentId(parentId);
         dept.setDeptName(request.getDeptName());
         dept.setOrderNum(request.getOrderNum());
         
         // 构建 ancestors
-        if (request.getParentId() != null && request.getParentId() > 0) {
-            SysDept parent = deptMapper.selectOneById(request.getParentId());
+        if (parentId != null && parentId > 0) {
+            SysDept parent = deptMapper.selectOneById(parentId);
             if (parent != null) {
-                dept.setAncestors(parent.getAncestors() + "," + request.getParentId());
+                dept.setAncestors(parent.getAncestors() + "," + parentId);
             }
         } else {
             dept.setAncestors("0");
         }
         
         deptMapper.insert(dept);
-        log.info("新增部门: {}", request.getDeptName());
+        log.info("用户 {} 新增部门: {} (父部门ID: {})", 
+                loginUser.getUsername(), request.getDeptName(), parentId);
         return R.ok();
     }
+    
+    /**
+     * 检查目标部门是否在用户的部门树下（包括子部门）
+     */
+    private boolean isInDeptTree(Long targetDeptId, List<Long> userDeptIds) {
+        if (userDeptIds == null || userDeptIds.isEmpty()) {
+            return false;
+        }
+        
+        // 如果目标部门就是用户的部门之一，直接返回true
+        if (userDeptIds.contains(targetDeptId)) {
+            return true;
+        }
+        
+        // 检查目标部门的祖先是否包含用户的部门
+        SysDept targetDept = deptMapper.selectOneById(targetDeptId);
+        if (targetDept != null && targetDept.getAncestors() != null) {
+            for (Long deptId : userDeptIds) {
+                if (targetDept.getAncestors().contains(String.valueOf(deptId))) {
+                    return true;
+                }
+            }
+        }
+        
+        return false;
+    }
+
 
     /**
      * 修改部门

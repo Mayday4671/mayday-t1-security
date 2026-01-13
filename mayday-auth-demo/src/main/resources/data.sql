@@ -139,3 +139,26 @@ INSERT INTO sys_role_menu (role_id, menu_id) VALUES
 (3, 1),   -- 首页
 (3, 100), (3, 101),  -- 系统管理 > 用户管理
 (3, 1001);  -- 用户查询
+-- 为角色 2 补充系统管理目录
+INSERT IGNORE INTO sys_role_menu (role_id, menu_id) VALUES (2, 100);
+
+-- 修复菜单 1035 的权限标识
+UPDATE sys_menu SET perms = 'crawler:manage:list' WHERE id = 1035;
+
+
+-- ----------------------------
+-- Records of crawler_task
+-- ----------------------------
+INSERT INTO `crawler_task` VALUES (3, '青年美图', '', '[\"https://jrants.com/category/wanghong/twitter\"]', 'BOTH', 3, 'SITE', 2000, 30000, 3, '', NULL, NULL, '', 1, NULL, 0, 0, 1, 'COMPLETED', 21, 21, 41, 0, '2025-12-14 19:30:47', '2026-01-10 22:20:42', '', '', '2025-12-14 19:30:34', '', '2026-01-10 22:16:54', '', 1, '', '.entry-content', '#right-sidebar');
+INSERT INTO `crawler_task` VALUES (4, '草榴-张婉芳', '', '[\"https://www.t66y.com/thread0806.php?fid=16&search=377126\"]', 'BOTH', 3, 'SITE', 1000, 30000, 1, '', NULL, NULL, '', 1, NULL, 1, 0, 1, 'COMPLETED', 21, 10, 28, 0, '2025-12-14 19:32:12', '2025-12-20 20:34:54', '', '', '2025-12-14 19:31:55', '', '2025-12-18 23:25:43', '', 1, NULL, NULL, NULL);
+INSERT INTO `crawler_task` VALUES (5, 'cl', '', '[\"https://www.t66y.com/thread0806.php?fid=16&search=&page=2\"]', 'BOTH', 3, 'SITE', 300, 30000, 3, '', NULL, NULL, '', 1, NULL, 0, 0, 1, 'COMPLETED', 1, 10, 202, 0, '2025-12-15 00:27:31', '2025-12-15 23:42:07', '', '', '2025-12-15 00:27:28', '', '2025-12-16 00:09:35', '', 0, NULL, NULL, NULL);
+INSERT INTO `crawler_task` VALUES (6, '偶像派', '', '[\"https://ouxpa.com/internet-celebrities-image-collection\"]', 'BOTH', 3, 'SITE', 1000, 30000, 3, '', NULL, NULL, '', 1, NULL, 0, 0, 1, 'COMPLETED', 378, 230, 418, 0, '2025-12-15 21:28:26', '2025-12-24 23:31:42', '', '', '2025-12-15 21:28:23', '', '2025-12-24 23:40:45', '', 1, '.wp-block-columns', '', '');
+INSERT INTO `crawler_task` VALUES (7, '虹图', '', '[\"https://www.hongimg.com/category/wanghong/%e7%a6%8f%e5%88%a9%e5%a7%ac/page/11\"]', 'BOTH', 3, 'SITE', 2000, 30000, 3, '', NULL, NULL, '', 1, NULL, 0, 0, 50, 'COMPLETED', 85, 84, 164, 0, '2025-12-14 19:30:47', '2025-12-25 23:14:47', '', '', '2025-12-14 19:30:34', '', '2025-12-25 23:09:19', '', 1, '', '.entry-content', '#right-sidebar');
+
+INSERT INTO `crawler_proxy` VALUES (1, 'USA', 'SOCKS', '127.0.0.1', 7897, '', '', 1, 0, '', '2025-12-14 22:31:20', '', '2025-12-14 22:31:20', '');
+
+
+
+
+
+
