@@ -283,8 +283,8 @@ public class SysLoginService {
         // 1. 查询用户在指定部门下的角色 (包含全局角色)
         List<SysRole> roles = permissionService.getRolesByUserAndDept(user.getId(), deptId);
         
-        // 2. 查询权限标识
-        Set<String> permissions = permissionService.getPermissionsByRoles(roles);
+        // 2. 查询权限标识 (传入 userId 用于超级管理员特权判断)
+        Set<String> permissions = permissionService.getPermissionsByRoles(roles, user.getId());
 
         // 3. 获取用户所属的所有部门 ID (用于数据权限自动合并)
         List<Long> allDeptIds = getUserDepts(user.getId()).stream()

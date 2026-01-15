@@ -123,9 +123,24 @@ npm run dev
 - [x] 数据权限 AOP (@DataScope)
 - [x] 前端 Vue3 登录页面
 
+## 8. 已修复问题 (2026-01-13)
+
+- [x] `SysLoginService.buildLoginUser()` 未传 userId，导致 admin 超级管理员权限失效
+- [x] `PermissionService.getPermissionsByUserAndDept()` 同上问题
+- [x] 新增部门树形接口 `GET /dept/tree` 用于用户编辑时的多选部门
+
 ---
 
-## 8. 待解决
+## 9. 新增 API
 
-- [ ] 密码验证问题调试
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| GET | /dept/tree | 部门树形结构 (用于 TreeSelect) |
+
+---
+
+## 10. 待解决
+
+- [ ] 密码验证问题调试 (使用 /debug/encode 生成新密码)
 - [ ] 完善前端 Home 页面功能
+- [ ] 前端集成 TreeSelect 组件
