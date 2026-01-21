@@ -16,6 +16,7 @@
     <modules>
         <module>mayday-auth</module>
         <module>mayday-auth-demo</module>
+        <module>mayday-ai</module>
     </modules>
 
     <!-- 版本管理 -->
@@ -39,6 +40,8 @@
         
         <!-- Lombok -->
         <lombok.version>1.18.32</lombok.version>
+        <!--open-ai-->
+        <langchain4j.version>1.0.0-beta3</langchain4j.version>
     </properties>
 
     <!-- 依赖管理 -->
@@ -57,6 +60,12 @@
             <dependency>
                 <groupId>com.mayday</groupId>
                 <artifactId>mayday-auth</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.mayday</groupId>
+                <artifactId>mayday-ai</artifactId>
                 <version>${project.version}</version>
             </dependency>
 
@@ -101,6 +110,18 @@
                 <groupId>org.projectlombok</groupId>
                 <artifactId>lombok</artifactId>
                 <version>${lombok.version}</version>
+            </dependency>
+
+            <!--langchain4j-->
+            <dependency>
+                <groupId>dev.langchain4j</groupId>
+                <artifactId>langchain4j-open-ai</artifactId>
+                <version>${langchain4j.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>dev.langchain4j</groupId>
+                <artifactId>langchain4j</artifactId>
+                <version>${langchain4j.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
